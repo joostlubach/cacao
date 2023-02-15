@@ -1,6 +1,58 @@
 //! Various types used at the AppController level.
+#![allow(non_upper_case_globals)]
+
+use bitflags::bitflags;
 
 use crate::foundation::NSUInteger;
+
+bitflags! {
+
+    /// ActivationOptions
+    /// See: https://developer.apple.com/documentation/appkit/nsapplication/activationoptions
+    pub struct ActivationOptions: NSUInteger {
+        /// Activate all windows, not just main and key windows.
+        const ActivateAllWindows = 1 << 0;
+
+        /// Steal focus from active app.
+        const ActivateIgnoringOtherApps = 1 << 1;
+    }
+
+}
+
+/// ActivationPolicy
+/// See: https://developer.apple.com/documentation/appkit/nsapplication/activationpolicy
+#[derive(Copy, Clone, Debug)]
+pub enum ActivationPolicy {
+    /// The application is an ordinary app that appears in the Dock and may have a user interface.
+    /// This is the default for bundled apps, unless overridden in the Info.plist.
+    Regular,
+
+    /// The application does not appear in the Dock and does not have a menu bar, but it may be
+    /// activated programmatically or by clicking on one of its windows.  This corresponds to
+    /// LSUIElement=1 in the Info.plist.
+    Accessory,
+
+    /// The application does not appear in the Dock and may not create windows or be activated.
+    /// This corresponds to LSBackgroundOnly=1 in the Info.plist.  This is also the default for
+    /// unbundled executables that do not have Info.plists.
+    Prohibited,
+}
+
+impl From<ActivationPolicy> for NSUInteger {
+    fn from(value: ActivationPolicy) -> NSUInteger {
+        match value {
+            ActivationPolicy::Regular => 0,
+            ActivationPolicy::Accessory => 1,
+            ActivationPolicy::Prohibited => 2,
+        }
+    }
+}
+
+impl Default for ActivationPolicy {
+    fn default() -> ActivationPolicy {
+        ActivationPolicy::Regular
+    }
+}
 
 /// Used for determining how an application should handle quitting/terminating.
 /// You return this in your `AppController` `should_terminate` method.
@@ -17,7 +69,7 @@ pub enum TerminateResponse {
     ///
     /// This return value is for primarily for cases where you need to provide alerts
     /// in order to decide whether to quit.
-    Later
+    Later,
 }
 
 impl From<TerminateResponse> for NSUInteger {
@@ -25,7 +77,7 @@ impl From<TerminateResponse> for NSUInteger {
         match response {
             TerminateResponse::Now => 1,
             TerminateResponse::Cancel => 0,
-            TerminateResponse::Later => 2
+            TerminateResponse::Later => 2,
         }
     }
 }
@@ -44,7 +96,7 @@ pub enum AppDelegateResponse {
     Success,
 
     /// Failed.
-    Failure
+    Failure,
 }
 
 impl From<AppDelegateResponse> for NSUInteger {
@@ -52,7 +104,7 @@ impl From<AppDelegateResponse> for NSUInteger {
         match response {
             AppDelegateResponse::Cancelled => 1,
             AppDelegateResponse::Success => 0,
-            AppDelegateResponse::Failure => 2
+            AppDelegateResponse::Failure => 2,
         }
     }
 }
@@ -112,7 +164,7 @@ pub enum PresentationOption {
     AutoHideToolbar,
 
     /// The behavior that allows the user to shake the mouse to locate the cursor is disabled.
-    DisableCursorLocationAssistance
+    DisableCursorLocationAssistance,
 }
 
 impl From<PresentationOption> for NSUInteger {
@@ -131,7 +183,7 @@ impl From<PresentationOption> for NSUInteger {
             PresentationOption::DisableMenuBarTransparency => (1 << 9),
             PresentationOption::FullScreen => (1 << 10),
             PresentationOption::AutoHideToolbar => (1 << 11),
-            PresentationOption::DisableCursorLocationAssistance => (1 << 12)
+            PresentationOption::DisableCursorLocationAssistance => (1 << 12),
         }
     }
 }
@@ -152,7 +204,7 @@ impl From<&PresentationOption> for NSUInteger {
             PresentationOption::DisableMenuBarTransparency => (1 << 9),
             PresentationOption::FullScreen => (1 << 10),
             PresentationOption::AutoHideToolbar => (1 << 11),
-            PresentationOption::DisableCursorLocationAssistance => (1 << 12)
+            PresentationOption::DisableCursorLocationAssistance => (1 << 12),
         }
     }
 }

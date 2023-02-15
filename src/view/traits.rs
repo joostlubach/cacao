@@ -3,7 +3,7 @@
 #[cfg(feature = "appkit")]
 use crate::dragdrop::{DragInfo, DragOperation};
 
-use crate::view::View;
+use crate::{layer::Layer, view::View};
 
 /// This trait can be used for implementing custom View behavior. You implement this trait on your
 /// struct, and wrap your struct in a `View` or `ViewController`. The view or controller then
@@ -40,6 +40,9 @@ pub trait ViewDelegate {
 
     /// Called when this has been removed from the view heirarchy.
     fn did_disappear(&self, animated: bool) {}
+
+    /// Called when the layer needs updating.
+    fn update_layer(&self) {}
 
     /// Invoked when the dragged image enters destination bounds or frame; returns dragging
     /// operation to perform.

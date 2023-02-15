@@ -98,7 +98,10 @@ pub struct App<T = (), M = ()> {
     /// The main-thread AutoReleasePool. Drains on app exit.
     pub pool: AutoReleasePool,
 
-    _message: std::marker::PhantomData<M>
+    /// The activationPolicy for the app.
+    pub activation_policy: ActivationPolicy,
+
+    _message: std::marker::PhantomData<M>,
 }
 
 impl<T, M> fmt::Debug for App<T, M> {
@@ -130,7 +133,7 @@ impl<T> App<T> {
 
 impl<T> App<T>
 where
-    T: AppDelegate + 'static
+    T: AppDelegate + 'static,
 {
     /// Creates an NSAutoReleasePool, configures various NSApplication properties (e.g, activation
     /// policies), injects an `NSObject` delegate wrapper, and retains everything on the
@@ -158,12 +161,15 @@ where
             Id::from_ptr(delegate)
         };
 
+        let activation_policy = Default::default();
+
         App {
             objc,
             objc_delegate,
             delegate: app_delegate,
             pool,
-            _message: std::marker::PhantomData
+            activation_policy,
+            _message: std::marker::PhantomData,
         }
     }
 }
@@ -186,7 +192,7 @@ where
 impl<T, M> App<T, M>
 where
     M: Send + Sync + 'static,
-    T: AppDelegate + Dispatcher<Message = M>
+    T: AppDelegate + Dispatcher<Message = M>,
 {
     /// Dispatches a message by grabbing the `sharedApplication`, getting ahold of the delegate,
     /// and passing back through there.
@@ -285,16 +291,31 @@ impl App {
         });
     }
 
+    pub fn set_activation_policy(policy: ActivationPolicy) {
+        shared_application(|app| unsafe {
+            let _: () = msg_send![app, setActivationPolicy: NSUInteger::from(policy)];
+        });
+    }
+
     /// For nib-less applications (which, if you're here, this is) need to call the activation
     /// routines after the NSMenu has been set, otherwise it won't be interact-able without
     /// switching away from the app and then coming back.
     ///
-    /// @TODO: Accept an ActivationPolicy enum or something.
     pub fn activate() {
         shared_application(|app| unsafe {
             let _: () = msg_send![app, setActivationPolicy:0];
             let current_app: id = msg_send![class!(NSRunningApplication), currentApplication];
-            let _: () = msg_send![current_app, activateWithOptions:1<<1];
+            let _: () = msg_send![current_app, activateWithOptions: 0];
+        });
+    }
+
+    /// Similar to [App<T>::activate()], but allows options to be specified.
+    ///
+    pub fn activate_with_options(opts: &ActivationOptions) {
+        shared_application(|app| unsafe {
+            let _: () = msg_send![app, setActivationPolicy:0];
+            let current_app: id = msg_send![class!(NSRunningApplication), currentApplication];
+            let _: () = msg_send![current_app, activateWithOptions: *opts];
         });
     }
 

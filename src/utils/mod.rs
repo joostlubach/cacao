@@ -2,6 +2,8 @@
 //! belong to. These are typically internal, and if you rely on them... well, don't be surprised if
 //! they go away one day.
 
+use std::ops::{Shl, ShlAssign};
+
 use core_graphics::base::CGFloat;
 
 use objc::{class, msg_send, sel, sel_impl};
@@ -52,7 +54,7 @@ pub fn load<'a, T>(this: &'a Object, ptr_name: &str) -> &'a T {
 /// Asynchronously execute a callback on the main thread via Grand Central Dispatch.
 pub fn async_main_thread<F>(method: F)
 where
-    F: Fn() + Send + 'static
+    F: Fn() + Send + 'static,
 {
     let queue = dispatch::Queue::main();
     queue.exec_async(method);
@@ -61,7 +63,7 @@ where
 /// Synchronously execute a callback on the main thread via Grand Central Dispatch.
 pub fn sync_main_thread<F>(method: F)
 where
-    F: Fn() + Send + 'static
+    F: Fn() + Send + 'static,
 {
     let queue = dispatch::Queue::main();
     queue.exec_sync(method);
@@ -76,7 +78,7 @@ pub struct CGSize {
     pub width: CGFloat,
 
     /// The height of this size.
-    pub height: CGFloat
+    pub height: CGFloat,
 }
 
 impl CGSize {
@@ -118,4 +120,16 @@ pub fn activate_cocoa_multithreading() {
         let thread: id = msg_send![class!(NSThread), new];
         let _: () = msg_send![thread, start];
     }
+}
+
+pub fn flag_enum<U, T>(flags: &[T]) -> U
+where
+    U: Default + From<T> + ShlAssign,
+    T: Copy,
+{
+    let mut combined: U = Default::default();
+    for flag in flags {
+        combined <<= (*flag).into();
+    }
+    combined
 }
